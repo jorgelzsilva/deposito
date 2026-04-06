@@ -1,0 +1,4 @@
+boto3  # AWS SDK for Python (futura migração do CLI)
+requests  # Usado pelo ai_agent.py para consultar o LM Studio
+python-xmp-toolkit  # Manipulação de metadados XMP (InDesign)
+colorama  # Suporte a cores no terminal
