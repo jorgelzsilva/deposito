@@ -1,0 +1,13 @@
+.gitignore
+README.md
+config/settings.py
+main.py
+modules/__init__.py
+modules/ai_agent.py
+modules/aws_handler.py
+modules/indesign_parser.py
+modules/sync_manager.py
+modules/vpn_handler.py
+prompts/analise_arquivos.txt
+requirements.txt
+setup_deposito.py

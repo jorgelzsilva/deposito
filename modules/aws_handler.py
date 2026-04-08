@@ -57,33 +57,12 @@ def sync_s3_to_local(s3_uri, local_root, session=None, max_workers=8):
 
             if not debug_keys:
                 print("      [DBG] Nenhum objeto encontrado no nível de debug também.")
-                return
 
-            # Se foram encontrados objetos próximos, tentar usar esses objetos como fallback.
-            # Determinar o prefixo comum em termos de diretório (não char-wise).
-            def _common_s3_dir_prefix(keys_list):
-                parts = [k.split('/') for k in keys_list]
-                common = []
-                for idx in range(min(len(p) for p in parts)):
-                    seg = parts[0][idx]
-                    if all(p[idx] == seg for p in parts):
-                        common.append(seg)
-                    else:
-                        break
-                if not common:
-                    return ''
-                return '/'.join(common) + '/'
-
-            base_prefix = _common_s3_dir_prefix(debug_keys)
-            if base_prefix:
-                print(f"   [AWS SYNC] Usando fallback com prefix comum detectado: s3://{bucket}/{base_prefix}")
-                # substituir keys pela lista encontrada e ajustar prefix para cálculo de paths locais
-                keys = [k for k in debug_keys if not k.endswith('/')]
-                prefix = base_prefix
-            else:
-                # se não for possível determinar prefixo comum confiável, abortar para evitar downloads errados
-                print("   [AWS SYNC] Não foi possível determinar um prefixo comum para fallback. Abortando.")
-                return
+            # Não fazer fallback: baixar objetos do nível acima causaria
+            # duplicação de conteúdo já organizado em outras pastas (ex.:
+            # Abertos/Miolo e Fechados/Miolo seriam copiados para Originais).
+            print(f"   [AWS SYNC] Prefix exato não encontrado em S3. Nenhum download realizado para {s3_uri}")
+            return
         except Exception as e:
             print(f"   [AWS SYNC] Erro ao listar para debug: {e}")
             return
@@ -332,6 +311,27 @@ def run_s3_sync(source, dest, profile="publishing"):
                             print(f"      [ERRO] Falha ao copiar {srcf} -> {dstf}: {e}")
 
 
+def _sync_originais(session, miolo_root, local_dest):
+    """Tenta sincronizar Originais do S3 tentando ambos os nomes de pasta."""
+    s3 = session.client('s3')
+    candidatos = ["Originais", "Original"]
+    bucket, _ = parse_s3_uri(miolo_root)
+
+    for nome in candidatos:
+        uri = f"{miolo_root}/Impressao/{nome}"
+        _, prefix = parse_s3_uri(uri + '/')
+        # Verifica se existe pelo menos um objeto com esse prefix
+        resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix, MaxKeys=1)
+        if resp.get('Contents'):
+            print(f"   [AWS SYNC] Encontrado conteúdo em: s3://{bucket}/{prefix}")
+            run_s3_sync(uri, local_dest)
+            return
+        else:
+            print(f"   [AWS SYNC] Nenhum objeto em: s3://{bucket}/{prefix}")
+
+    print("   [AWS SYNC] Nenhuma pasta de Originais/Original encontrada no S3.")
+
+
 def processar_aws(job_config, base_local):
     """
     Lógica de INPUT: Coleta Capa e Miolo das raízes fornecidas.
@@ -364,7 +364,8 @@ def processar_aws(job_config, base_local):
     miolo_root = job_config['s3_miolo_root'].rstrip('/')
     run_s3_sync(f"{miolo_root}/Impressao/Abertos/Miolo", f"{base_local}/Impressao/Abertos/Miolo")
     run_s3_sync(f"{miolo_root}/Impressao/Fechados/Miolo", f"{base_local}/Impressao/Fechados/Miolo")
-    run_s3_sync(f"{miolo_root}/Impressao/Original", f"{base_local}/Impressao/Originais")
+    # Originais: tenta ambos os nomes usados nos fornecedores ("Originais" e "Original")
+    _sync_originais(session, miolo_root, f"{base_local}/Impressao/Originais")
 
 
 def upload_final(base_local, s3_destino):
