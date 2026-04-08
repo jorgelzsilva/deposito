@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>depósito — automação editorial</title>
+<meta name="description" content="Interface de automação para organização e armazenamento de materiais editoriais">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════════
+     DESIGN TOKENS
+     ═══════════════════════════════════════════════════ */
+  :root {
+    --green-900: #0a1f0d;
+    --green-800: #122917;
+    --green-700: #1a3a1f;
+    --green-600: #264d2e;
+    --green-500: #35713f;
+    --green-400: #4a9957;
+    --green-300: #6abb78;
+    --green-200: #a3d9ac;
+    --green-100: #d4ecd8;
+    --green-50:  #eef7f0;
+
+    --cream:     #f8f5ef;
+    --cream-dark:#e8e2d6;
+    --bark:      #3d2e1e;
+    --bark-light:#6b5340;
+    --moss:      #5a7247;
+    --sage:      #8faa7e;
+    --fern:      #3d6b4f;
+
+    --glass-bg:       rgba(255, 255, 255, 0.06);
+    --glass-border:   rgba(255, 255, 255, 0.10);
+    --glass-bg-light: rgba(10, 31, 13, 0.55);
+    --glass-border-l: rgba(10, 31, 13, 0.12);
+
+    --shadow-soft: 0 8px 32px rgba(10, 31, 13, 0.18);
+    --shadow-glow: 0 0 60px rgba(74, 153, 87, 0.08);
+
+    --radius:   16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+
+    --font-display: 'Fraunces', serif;
+    --font-body:    'DM Sans', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     RESET & BASE
+     ═══════════════════════════════════════════════════ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    font-size: 15px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--cream);
+    background: var(--green-900);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     ORGANIC BACKGROUND LAYERS
+     ═══════════════════════════════════════════════════ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(74, 153, 87, 0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 85% 80%, rgba(90, 114, 71, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(61, 107, 79, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* subtle noise grain */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     LAYOUT CONTAINER
+     ═══════════════════════════════════════════════════ */
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════ */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: 3.2rem;
+    letter-spacing: -0.02em;
+    color: var(--green-200);
+    line-height: 1.1;
+  }
+
+  .header h1 span {
+    font-weight: 700;
+    font-style: italic;
+    color: var(--green-400);
+  }
+
+  .header .subtitle {
+    font-size: 0.82rem;
+    color: var(--sage);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: 8px;
+    font-weight: 500;
+  }
+
+  .header .divider {
+    width: 48px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green-500), transparent);
+    margin: 18px auto 0;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     GLASS CARD
+     ═══════════════════════════════════════════════════ */
+  .card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 28px 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-soft), var(--shadow-glow);
+    transition: border-color 0.3s ease;
+  }
+
+  .card:hover {
+    border-color: rgba(106, 187, 120, 0.16);
+  }
+
+  .card-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--green-200);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title .icon {
+    font-size: 1.1rem;
+    opacity: 0.7;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     FORM FIELDS
+     ═══════════════════════════════════════════════════ */
+  .field-group {
+    margin-bottom: 14px;
+  }
+
+  .field-group label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--sage);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+
+  .field-group input[type="text"] {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-xs);
+    padding: 9px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--cream);
+    transition: border-color 0.25s ease, background 0.25s ease;
+    outline: none;
+  }
+
+  .field-group input[type="text"]:focus {
+    border-color: var(--green-500);
+    background: rgba(74, 153, 87, 0.06);
+  }
+
+  .field-group input[type="text"]::placeholder {
+    color: rgba(163, 217, 172, 0.25);
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* section divider */
+  .section-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--green-500);
+    margin: 20px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(74, 153, 87, 0.12);
+  }
+
+  .section-label:first-child {
+    margin-top: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     TOGGLE SWITCHES
+     ═══════════════════════════════════════════════════ */
+  .toggles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 10px;
+  }
+
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-xs);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .toggle-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .toggle-item label {
+    font-size: 0.78rem;
+    color: var(--green-200);
+    cursor: pointer;
+    user-select: none;
+    letter-spacing: 0;
+    text-transform: none;
+    margin-bottom: 0;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: var(--cream-dark);
+    border-radius: 50%;
+    transition: transform 0.3s ease, background 0.3s ease;
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    background: var(--green-500);
+  }
+
+  .toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(16px);
+    background: var(--cream);
+  }
+
+  /* ═══════════════════════════════════════════════════
+     ACTION BUTTONS
+     ═══════════════════════════════════════════════════ */
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.02em;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .btn:hover::after {
+    opacity: 1;
+  }
+
+  .btn-save {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--glass-border);
+    color: var(--green-200);
+  }
+
+  .btn-save:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(106, 187, 120, 0.2);
+  }
+
+  .btn-run {
+    background: linear-gradient(135deg, var(--green-600), var(--green-700));
+    border-color: var(--green-500);
+    color: var(--cream);
+    box-shadow: 0 4px 20px rgba(74, 153, 87, 0.2);
+  }
+
+  .btn-run:hover {
+    box-shadow: 0 6px 30px rgba(74, 153, 87, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-run.running {
+    background: linear-gradient(135deg, #6b3a2e, #4d2a20);
+    border-color: #a0534a;
+    box-shadow: 0 4px 20px rgba(160, 83, 74, 0.2);
+  }
+
+  .btn-run:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     LOG TERMINAL — with cube background
+     ═══════════════════════════════════════════════════ */
+  .terminal-wrapper {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  /* 3D cube lives behind the terminal content */
+  .cube-backdrop {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 800px;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .cube-glow {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(74, 153, 87, 0.12), transparent 70%);
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.3); opacity: 0.8; }
+  }
+
+  .cube-scene {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+
+  .cube-face {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border: 1px solid rgba(106, 187, 120, 0.18);
+    border-radius: 14px;
+    background: rgba(74, 153, 87, 0.04);
+    box-shadow:
+      inset 0 0 40px rgba(74, 153, 87, 0.03),
+      0 0 25px rgba(74, 153, 87, 0.02);
+  }
+
+  .cube-face.front  { transform: translateZ(60px); }
+  .cube-face.back   { transform: rotateY(180deg) translateZ(60px); }
+  .cube-face.right  { transform: rotateY(90deg) translateZ(60px); }
+  .cube-face.left   { transform: rotateY(-90deg) translateZ(60px); }
+  .cube-face.top    { transform: rotateX(90deg) translateZ(60px); }
+  .cube-face.bottom { transform: rotateX(-90deg) translateZ(60px); }
+
+  .terminal {
+    position: relative;
+    z-index: 1;
+    background: rgba(6, 16, 8, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(106, 187, 120, 0.08);
+    border-radius: var(--radius);
+    padding: 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(106, 187, 120, 0.06);
+    gap: 7px;
+  }
+
+  .terminal-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    opacity: 0.5;
+  }
+  .terminal-dot:nth-child(1) { background: #5a4a3a; }
+  .terminal-dot:nth-child(2) { background: #4a5a3a; }
+  .terminal-dot:nth-child(3) { background: #3a5a4a; }
+
+  .terminal-title {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--sage);
+    margin-left: 8px;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
+  }
+
+  .terminal-body {
+    padding: 16px;
+    height: 380px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    line-height: 1.65;
+    color: var(--green-200);
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-700) transparent;
+  }
+
+  .terminal-body::-webkit-scrollbar {
+    width: 5px;
+  }
+  .terminal-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .terminal-body::-webkit-scrollbar-thumb {
+    background: var(--green-700);
+    border-radius: 3px;
+  }
+
+  .log-line {
+    white-space: pre-wrap;
+    word-break: break-all;
+    padding: 1px 0;
+  }
+
+  .log-line.error {
+    color: #d4886b;
+  }
+
+  .log-line.success {
+    color: var(--green-400);
+  }
+
+  .log-line.info {
+    color: var(--sage);
+  }
+
+  .log-line.debug {
+    color: rgba(163, 217, 172, 0.35);
+  }
+
+  .log-placeholder {
+    color: rgba(143, 170, 126, 0.3);
+    font-style: italic;
+    text-align: center;
+    padding: 60px 0;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     INTERACTIVE PROMPT (stdin)
+     ═══════════════════════════════════════════════════ */
+  .prompt-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(74, 153, 87, 0.15);
+    background: rgba(38, 77, 46, 0.25);
+    animation: promptSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .prompt-bar.visible {
+    display: flex;
+  }
+
+  @keyframes promptSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .prompt-bar .prompt-text {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--green-300);
+  }
+
+  .prompt-bar .prompt-text .prompt-icon {
+    color: var(--green-400);
+    margin-right: 6px;
+    font-weight: 600;
+  }
+
+  .prompt-btn {
+    padding: 6px 18px;
+    border-radius: var(--radius-xs);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .prompt-btn.yes {
+    background: var(--green-600);
+    border-color: var(--green-400);
+    color: var(--cream);
+  }
+
+  .prompt-btn.yes:hover {
+    background: var(--green-500);
+    box-shadow: 0 2px 12px rgba(74, 153, 87, 0.3);
+  }
+
+  .prompt-btn.no {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--green-200);
+  }
+
+  .prompt-btn.no:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* ═══════════════════════════════════════════════════
+     RUNNING INDICATOR on terminal
+     ═══════════════════════════════════════════════════ */
+  .terminal-status {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--green-300);
+    letter-spacing: 0.06em;
+  }
+
+  .terminal-status.visible {
+    display: flex;
+  }
+
+  .terminal-status .status-dot {
+    width: 6px; height: 6px;
+    background: var(--green-400);
+    border-radius: 50%;
+    animation: dotBlink 1.2s ease-in-out infinite;
+  }
+
+  @keyframes dotBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  /* ═══════════════════════════════════════════════════
+     STATUS BAR
+     ═══════════════════════════════════════════════════ */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding: 0 4px;
+    font-size: 0.7rem;
+    color: var(--sage);
+    opacity: 0.5;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     TOAST NOTIFICATIONS
+     ═══════════════════════════════════════════════════ */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: rgba(10, 31, 13, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--green-600);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-size: 0.82rem;
+    color: var(--green-200);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  .toast.visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     RESPONSIVE
+     ═══════════════════════════════════════════════════ */
+  @media (max-width: 640px) {
+    #app { padding: 24px 14px 40px; }
+    .header h1 { font-size: 2.4rem; }
+    .field-row { grid-template-columns: 1fr; }
+    .actions { flex-direction: column; }
+    .toggles-grid { grid-template-columns: 1fr 1fr; }
+    .terminal-body { height: 260px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ─── HEADER ─── -->
+  <header class="header">
+    <h1>dep<span>ó</span>sito</h1>
+    <p class="subtitle">automação editorial</p>
+    <div class="divider"></div>
+  </header>
+
+  <!-- ─── SETTINGS CARD ─── -->
+  <div class="card" id="settingsCard">
+    <div class="card-title"><span class="icon">⬡</span> Configuração do Projeto</div>
+
+    <div class="field-group">
+      <label for="nome_projeto">Nome do Projeto (ISBN)</label>
+      <input type="text" id="nome_projeto" placeholder="9786558823551">
+    </div>
+
+    <div class="section-label">Raízes AWS (S3)</div>
+    <div class="field-group">
+      <label for="s3_capa_root">S3 Capa Root</label>
+      <input type="text" id="s3_capa_root" placeholder="s3://bucket/path/to/Capas/">
+    </div>
+    <div class="field-group">
+      <label for="s3_miolo_root">S3 Miolo Root</label>
+      <input type="text" id="s3_miolo_root" placeholder="s3://bucket/path/to/Miolo/">
+    </div>
+    <div class="field-group">
+      <label for="s3_final_root">S3 Final Root (Backup)</label>
+      <input type="text" id="s3_final_root" placeholder="s3://bucket/BACKUP/">
+    </div>
+
+    <div class="section-label">Caminhos Locais / VPN</div>
+    <div class="field-group">
+      <label for="vpn_apoio_root">VPN Apoio Root</label>
+      <input type="text" id="vpn_apoio_root" placeholder="L:\Autor\Projeto\Apoio">
+    </div>
+    <div class="field-group">
+      <label for="vpn_originais">VPN Originais</label>
+      <input type="text" id="vpn_originais" placeholder="L:\Autor\Projeto\Original">
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label for="vpn_web_epub">VPN Web ePub</label>
+        <input type="text" id="vpn_web_epub" placeholder="L:\...\binpar">
+      </div>
+      <div class="field-group">
+        <label for="vpn_metabooks">VPN Metabooks</label>
+        <input type="text" id="vpn_metabooks" placeholder="L:\...\Metabooks">
+      </div>
+    </div>
+
+    <div class="section-label">Módulos</div>
+    <div class="toggles-grid">
+      <div class="toggle-item">
+        <div class="toggle-switch">
+          <input type="checkbox" id="mod_aws_input" checked>
+          <span class="toggle-slider"></span>
+        </div>
+        <label for="mod_aws_input">AWS Input</label>
+      </div>
+      <div class="toggle-item">
+        <div class="toggle-switch">
+          <input type="checkbox" id="mod_vpn_sync" checked>
+          <span class="toggle-slider"></span>
+        </div>
+        <label for="mod_vpn_sync">VPN Sync</label>
+      </div>
+      <div class="toggle-item">
+        <div class="toggle-switch">
+          <input type="checkbox" id="mod_indesign_parser" checked>
+          <span class="toggle-slider"></span>
+        </div>
+        <label for="mod_indesign_parser">InDesign Parser</label>
+      </div>
+      <div class="toggle-item">
+        <div class="toggle-switch">
+          <input type="checkbox" id="mod_ai_agent" checked>
+          <span class="toggle-slider"></span>
+        </div>
+        <label for="mod_ai_agent">AI Agent</label>
+      </div>
+      <div class="toggle-item">
+        <div class="toggle-switch">
+          <input type="checkbox" id="mod_aws_output" checked>
+          <span class="toggle-slider"></span>
+        </div>
+        <label for="mod_aws_output">AWS Output</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ACTION BUTTONS ─── -->
+  <div class="actions">
+    <button class="btn btn-save" id="btnSave" onclick="saveSettings()">
+      Salvar Configuração
+    </button>
+    <button class="btn btn-run" id="btnRun" onclick="toggleRun()">
+      Iniciar Automação
+    </button>
+  </div>
+
+  <!-- ─── LOG TERMINAL with cube background ─── -->
+  <div class="terminal-wrapper">
+    <!-- 3D cube spinning behind the terminal -->
+    <div class="cube-backdrop" id="cubeBackdrop">
+      <div class="cube-glow"></div>
+      <div class="cube-scene" id="cubeScene">
+        <div class="cube-face front"></div>
+        <div class="cube-face back"></div>
+        <div class="cube-face right"></div>
+        <div class="cube-face left"></div>
+        <div class="cube-face top"></div>
+        <div class="cube-face bottom"></div>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <span class="terminal-title">terminal — saída do processo</span>
+        <div class="terminal-status" id="terminalStatus">
+          <span class="status-dot"></span>
+          <span>em execução</span>
+        </div>
+      </div>
+      <div class="terminal-body" id="terminalBody">
+        <div class="log-placeholder">aguardando execução…</div>
+      </div>
+      <!-- Interactive stdin prompt -->
+      <div class="prompt-bar" id="promptBar">
+        <div class="prompt-text">
+          <span class="prompt-icon">❯</span>
+          <span id="promptText">Deseja prosseguir com o upload?</span>
+        </div>
+        <button class="prompt-btn no" onclick="sendInput('n')">Pular</button>
+        <button class="prompt-btn yes" onclick="sendInput('s')">Subir Agora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STATUS BAR ─── -->
+  <div class="status-bar">
+    <span id="statusLeft">pronto</span>
+    <span>depósito v1.0</span>
+  </div>
+</div>
+
+<!-- ─── TOAST ─── -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   3D CUBE ANIMATION ENGINE — always behind terminal
+   ═══════════════════════════════════════════════════ */
+const cubeScene = document.getElementById('cubeScene');
+
+let cubeAnimId = null;
+let cubeState = {
+  rx: 0, ry: 0, rz: 0,
+  vx: 0.6, vy: 0.9, vz: 0.3,
+  targetVx: 0.6, targetVy: 0.9, targetVz: 0.3,
+};
+
+function randomizeTarget() {
+  cubeState.targetVx = (Math.random() - 0.5) * 2.4;
+  cubeState.targetVy = (Math.random() - 0.5) * 2.4;
+  cubeState.targetVz = (Math.random() - 0.5) * 1.2;
+}
+
+function animateCube() {
+  const lerp = 0.018;
+  cubeState.vx += (cubeState.targetVx - cubeState.vx) * lerp;
+  cubeState.vy += (cubeState.targetVy - cubeState.vy) * lerp;
+  cubeState.vz += (cubeState.targetVz - cubeState.vz) * lerp;
+
+  cubeState.rx += cubeState.vx;
+  cubeState.ry += cubeState.vy;
+  cubeState.rz += cubeState.vz;
+
+  cubeScene.style.transform =
+    `rotateX(${cubeState.rx}deg) rotateY(${cubeState.ry}deg) rotateZ(${cubeState.rz}deg)`;
+
+  cubeAnimId = requestAnimationFrame(animateCube);
+}
+
+// Start cube immediately — always spinning behind terminal
+cubeAnimId = requestAnimationFrame(animateCube);
+setInterval(randomizeTarget, 2500);
+
+/* ═══════════════════════════════════════════════════
+   SETTINGS MANAGEMENT
+   ═══════════════════════════════════════════════════ */
+const JOB_FIELDS = [
+  'nome_projeto', 's3_capa_root', 's3_miolo_root', 's3_final_root',
+  'vpn_apoio_root', 'vpn_originais', 'vpn_web_epub', 'vpn_metabooks'
+];
+
+const MOD_FIELDS = {
+  'mod_aws_input':      'aws_input',
+  'mod_vpn_sync':       'vpn_sync',
+  'mod_indesign_parser':'indesign_parser',
+  'mod_ai_agent':       'ai_agent',
+  'mod_aws_output':     'aws_output',
+};
+
+async function loadSettings() {
+  try {
+    const r = await fetch('/api/settings');
+    if (!r.ok) throw new Error('Falha ao carregar configurações');
+    const data = await r.json();
+
+    JOB_FIELDS.forEach(f => {
+      const el = document.getElementById(f);
+      if (el && data.job && data.job[f] !== undefined) {
+        el.value = data.job[f];
+      }
+    });
+
+    Object.entries(MOD_FIELDS).forEach(([htmlId, key]) => {
+      const el = document.getElementById(htmlId);
+      if (el && data.modulos && data.modulos[key] !== undefined) {
+        el.checked = data.modulos[key];
+      }
+    });
+  } catch (e) {
+    console.error('loadSettings:', e);
+  }
+}
+
+async function saveSettings() {
+  const job = {};
+  JOB_FIELDS.forEach(f => {
+    job[f] = document.getElementById(f).value;
+  });
+
+  const modulos = {};
+  Object.entries(MOD_FIELDS).forEach(([htmlId, key]) => {
+    modulos[key] = document.getElementById(htmlId).checked;
+  });
+
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job, modulos }),
+    });
+    if (!r.ok) throw new Error('Erro ao salvar');
+    showToast('Configuração salva com sucesso');
+  } catch (e) {
+    showToast('Erro ao salvar configuração');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PROCESS CONTROL (SSE) + INTERACTIVE STDIN
+   ═══════════════════════════════════════════════════ */
+let eventSource = null;
+let isRunning = false;
+
+function classifyLine(text) {
+  const t = text.toLowerCase();
+  if (t.includes('[erro]') || t.includes('error') || t.includes('falha')) return 'error';
+  if (t.includes('[ok]') || t.includes('sucesso') || t.includes('concluído')) return 'success';
+  if (t.startsWith('-> debug') || t.includes('[dbg]')) return 'debug';
+  return 'info';
+}
+
+function appendLog(text, cls) {
+  const body = document.getElementById('terminalBody');
+  const ph = body.querySelector('.log-placeholder');
+  if (ph) ph.remove();
+
+  const line = document.createElement('div');
+  line.className = `log-line ${cls || classifyLine(text)}`;
+  line.textContent = text;
+  body.appendChild(line);
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearLogs() {
+  document.getElementById('terminalBody').innerHTML =
+    '<div class="log-placeholder">aguardando execução…</div>';
+}
+
+/* ─── Detect stdin prompts ─── */
+function checkForPrompt(text) {
+  const t = text.toLowerCase();
+  // Detect the upload prompt from main.py
+  if (t.includes("pressione 's'") || t.includes('pressione') && t.includes('subir agora')) {
+    showPrompt('Deseja prosseguir com o upload para S3?');
+  }
+}
+
+function showPrompt(msg) {
+  document.getElementById('promptText').textContent = msg;
+  document.getElementById('promptBar').classList.add('visible');
+  // Scroll terminal to bottom so user sees the prompt
+  const body = document.getElementById('terminalBody');
+  body.scrollTop = body.scrollHeight;
+}
+
+function hidePrompt() {
+  document.getElementById('promptBar').classList.remove('visible');
+}
+
+async function sendInput(value) {
+  hidePrompt();
+  appendLog(`  → resposta: ${value === 's' ? 'subir agora' : 'pular'}`, 'success');
+  try {
+    await fetch('/api/input', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: value }),
+    });
+  } catch (e) {
+    appendLog(`Erro ao enviar resposta: ${e.message}`, 'error');
+  }
+}
+
+/* ─── Running state ─── */
+function setRunning(state) {
+  isRunning = state;
+  const btn = document.getElementById('btnRun');
+  const status = document.getElementById('statusLeft');
+  const termStatus = document.getElementById('terminalStatus');
+
+  if (state) {
+    btn.textContent = 'Parar';
+    btn.classList.add('running');
+    status.textContent = 'em execução…';
+    termStatus.classList.add('visible');
+  } else {
+    btn.textContent = 'Iniciar Automação';
+    btn.classList.remove('running');
+    status.textContent = 'pronto';
+    termStatus.classList.remove('visible');
+    hidePrompt();
+  }
+}
+
+async function toggleRun() {
+  if (isRunning) {
+    try {
+      await fetch('/api/stop', { method: 'POST' });
+    } catch (_) {}
+    if (eventSource) { eventSource.close(); eventSource = null; }
+    appendLog('\n── processo interrompido pelo usuário ──', 'error');
+    setRunning(false);
+    return;
+  }
+
+  clearLogs();
+  setRunning(true);
+  appendLog('── iniciando automação ──', 'success');
+
+  eventSource = new EventSource('/api/stream');
+
+  eventSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'log') {
+      appendLog(data.text);
+      checkForPrompt(data.text);
+    } else if (data.type === 'done') {
+      appendLog('\n── processo finalizado ──', 'success');
+      setRunning(false);
+      eventSource.close();
+      eventSource = null;
+    } else if (data.type === 'error') {
+      appendLog(`\n── erro: ${data.text} ──`, 'error');
+      setRunning(false);
+      eventSource.close();
+      eventSource = null;
+    }
+  };
+
+  eventSource.onerror = () => {
+    if (isRunning) {
+      appendLog('\n── conexão com o servidor perdida ──', 'error');
+      setRunning(false);
+    }
+    if (eventSource) { eventSource.close(); eventSource = null; }
+  };
+
+  try {
+    const r = await fetch('/api/run', { method: 'POST' });
+    if (!r.ok) {
+      const err = await r.text();
+      appendLog(`Erro ao iniciar: ${err}`, 'error');
+      setRunning(false);
+    }
+  } catch (e) {
+    appendLog(`Erro de conexão: ${e.message}`, 'error');
+    setRunning(false);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════════════ */
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('visible');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('visible'), 2800);
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', loadSettings);
+</script>
+
+</body>
+</html>
