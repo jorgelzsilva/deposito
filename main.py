@@ -182,7 +182,8 @@ def main():
             if not auto:
                 print("-> Upload pausado aguardando sinal verde.")
                 print("   Crie o arquivo 'UPLOAD_OK' na pasta do projeto ou defina a variável de ambiente AUTO_UPLOAD=1 para subir automaticamente.")
-                resp = input("Pressione 's' e Enter para subir agora, ou qualquer outra tecla para pular: ").strip().lower()
+                print("-> Pressione 's' e Enter para subir agora, ou qualquer outra tecla para pular:")
+                resp = input().strip().lower()
                 if resp != 's':
                     print("-> Upload final PULADO pelo usuário.")
                 else:

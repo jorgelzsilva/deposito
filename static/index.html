@@ -985,7 +985,9 @@ function clearLogs() {
 function checkForPrompt(text) {
   const t = text.toLowerCase();
   // Detect the upload prompt from main.py
-  if (t.includes("pressione 's'") || t.includes('pressione') && t.includes('subir agora')) {
+  if (t.includes("pressione 's'") || 
+      t.includes("aguardando sinal verde") || 
+      (t.includes('pressione') && t.includes('subir agora'))) {
     showPrompt('Deseja prosseguir com o upload para S3?');
   }
 }
