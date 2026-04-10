@@ -178,7 +178,7 @@ def run_process():
             encoding='utf-8',
             errors='replace',
             cwd=BASE_DIR,
-            env={**os.environ, 'PYTHONUNBUFFERED': '1'},
+            env={**os.environ, 'PYTHONUNBUFFERED': '1', 'PYTHONIOENCODING': 'utf-8'},
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
         )
 

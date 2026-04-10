@@ -3,7 +3,7 @@ import os
 import unicodedata
 
 COMMON_EXT = r'(?:eps|jpg|jpeg|tif|tiff|png|pdf|zip|xml|psd|otf|ttf|ai|svg|bmp)'
-FNAME_RE = re.compile(r'([A-Za-z0-9_\- \(\)\[\]\.]+\.' + COMMON_EXT + r')', re.IGNORECASE)
+FNAME_RE = re.compile(r'([^\\/:]+\.' + COMMON_EXT + r')', re.IGNORECASE)
 
 def get_indesign_links(file_path):
     links = []
@@ -28,8 +28,19 @@ def get_indesign_links(file_path):
                     except Exception:
                         path_str = str(path_bytes)
 
-                # normaliza barras e remove caracteres nulos/espaços
-                path_str = path_str.replace('\\', '/').strip().strip('\x00')
+                import html
+                import urllib.parse
+                try:
+                    path_str = html.unescape(path_str)
+                    path_str = urllib.parse.unquote(path_str)
+                except Exception:
+                    pass
+
+                # Filtra apenas caracteres válidos (remove \x00 e lixo binário gerado por strings não-utf8 erradas)
+                path_str = ''.join(ch for ch in path_str if ch.isprintable() or ch in ('/', '\\', ':'))
+
+                # normaliza barras e remove espaços
+                path_str = path_str.replace('\\', '/').strip()
 
                 # Tentar extrair filename com extensão comum via regex
                 fname = None

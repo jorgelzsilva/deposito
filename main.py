@@ -1,10 +1,14 @@
 import os
+import sys
 import re
-import importlib
 from config import settings
 from modules import aws_handler, vpn_handler, indesign_parser, ai_agent, sync_manager
 
 def main():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
     # Primeiro tenta usar o módulo importado normalmente
     job = settings.JOB
     # Forçar leitura direta do arquivo config/settings.py para evitar cache/import e problemas de encoding
@@ -50,17 +54,18 @@ def main():
         # Normaliza e salva lista de links extraídos (únicos, A-Z)
         # Limpeza: extrair nomes válidos via regex ou filtrar caracteres imprimíveis
         COMMON_EXT = r'(?:eps|jpg|jpeg|tif|tiff|png|pdf|zip|xml|psd|otf|ttf|ai|svg|bmp)'
-        FNAME_RE = re.compile(r'([A-Za-z0-9_\- \(\)\[\]\.]+\.' + COMMON_EXT + r')', re.IGNORECASE)
+        FNAME_RE = re.compile(r'([^\\/:]+\.' + COMMON_EXT + r')', re.IGNORECASE)
 
         def clean_name(n):
             if not n:
                 return None
             n = str(n).strip()
+            # Tenta encontrar o arquivo ignorando todo caminho antes da última barra
             m = FNAME_RE.search(n)
             if m:
                 return m.group(1).strip()
-            # fallback: keep only printable ASCII chars
-            s = ''.join(ch for ch in n if ch.isprintable() and ord(ch) < 128)
+            # fallback: manter apenas até encontrar qualquer quebra/espaço duplo
+            s = ''.join(ch for ch in n if ch.isprintable())
             s = re.sub(r'\s+', ' ', s).strip()
             return s if s else None
 
