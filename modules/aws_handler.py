@@ -191,39 +191,26 @@ def sync_local_to_s3(local_root, s3_uri, session=None, max_workers=8):
         print(f"   [AWS UPLOAD] Erro ao gravar logs de upload: {e}")
 
 
-def _create_session_with_fallback(profile="publishing"):
-    try:
-        session = boto3.Session(profile_name=profile) if profile else boto3.Session()
-    except ProfileNotFound:
-        print(f'   [AWS SYNC] Perfil AWS "{profile}" não encontrado. Usando credenciais padrão/variáveis de ambiente.')
-        session = boto3.Session()
+def _create_session_with_fallback(profile=None):
+    cred_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config', 'credentials.json'))
+    if os.path.exists(cred_path):
+        try:
+            with open(cred_path, 'r', encoding='utf-8') as f:
+                c = json.load(f)
+            access = c.get('aws_access_key') or c.get('aws_access_key_id')
+            secret = c.get('aws_secret_key') or c.get('aws_secret_access_key')
+            if access and secret:
+                print('   [AWS SYNC] Usando credenciais do arquivo config/credentials.json')
+                return boto3.Session(aws_access_key_id=access, aws_secret_access_key=secret)
+            else:
+                print('   [AWS SYNC] Arquivo config/credentials.json encontrado, mas chaves não estão no formato esperado.')
+        except Exception as e:
+            print(f'   [AWS SYNC] Erro ao ler credenciais locais: {e}')
+    else:
+        print('   [AWS SYNC] config/credentials.json não encontrado. Usando sessão padrão do AWS.')
 
-    # Se sessão não tiver credenciais, tentar carregar de config/credentials.json
-    try:
-        creds = session.get_credentials()
-        has_creds = bool(creds and creds.access_key)
-    except Exception:
-        has_creds = False
-
-    if not has_creds:
-        cred_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config', 'credentials.json'))
-        if os.path.exists(cred_path):
-            try:
-                with open(cred_path, 'r', encoding='utf-8') as f:
-                    c = json.load(f)
-                access = c.get('aws_access_key') or c.get('aws_access_key_id')
-                secret = c.get('aws_secret_key') or c.get('aws_secret_access_key')
-                if access and secret:
-                    session = boto3.Session(aws_access_key_id=access, aws_secret_access_key=secret)
-                    print('   [AWS SYNC] Usando credenciais do arquivo config/credentials.json')
-                else:
-                    print('   [AWS SYNC] Arquivo config/credentials.json encontrado, mas chaves não estão no formato esperado.')
-            except Exception as e:
-                print(f'   [AWS SYNC] Erro ao ler credenciais locais: {e}')
-        else:
-            print('   [AWS SYNC] Nenhuma credencial AWS encontrada (perfil, variáveis de ambiente ou config/credentials.json).')
-
-    return session
+    # Fallback para sessão padrão (variáveis de ambiente, IAM, etc)
+    return boto3.Session()
 
 
 def _list_immediate_prefixes(session, bucket, prefix):
