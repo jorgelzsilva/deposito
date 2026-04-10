@@ -335,37 +335,79 @@ def _sync_originais(session, miolo_root, local_dest):
 def processar_aws(job_config, base_local):
     """
     Lógica de INPUT: Coleta Capa e Miolo das raízes fornecidas.
+    Aceita tanto caminhos s3:// quanto caminhos locais do computador.
     Substitui o antigo 'run_download'.
     """
     print("\n[MÓDULO AWS] Iniciando coleta de materiais (Capa/Miolo)...")
 
-    # Processamento de Capa
-    capa_root = job_config['s3_capa_root'].rstrip('/')
-    # Detectar subpastas (Aberto/Fechado) dinamicamente
     session = _create_session_with_fallback()
-    bucket, root_prefix = parse_s3_uri(capa_root)
-    prefixes = _list_immediate_prefixes(session, bucket, root_prefix)
-    if prefixes:
-        # para cada prefix encontrado, decidir destino local
-        for p in prefixes:
-            name = os.path.basename(p.rstrip('/'))
-            if 'aberto' in name.lower():
-                run_s3_sync(f"s3://{bucket}/{p}", f"{base_local}/Impressao/Abertos/Capa")
-            elif 'fechado' in name.lower() or 'closed' in name.lower():
-                run_s3_sync(f"s3://{bucket}/{p}", f"{base_local}/Impressao/Fechados/Capa")
+
+    # Processamento de Capa
+    capa_root = job_config.get('s3_capa_root', '').rstrip('/').strip()
+    if capa_root.startswith('s3://'):
+        # Detectar subpastas (Aberto/Fechado) dinamicamente
+        bucket, root_prefix = parse_s3_uri(capa_root)
+        prefixes = _list_immediate_prefixes(session, bucket, root_prefix)
+        if prefixes:
+            # para cada prefix encontrado, decidir destino local
+            for p in prefixes:
+                name = os.path.basename(p.rstrip('/'))
+                if 'aberto' in name.lower():
+                    run_s3_sync(f"s3://{bucket}/{p}", f"{base_local}/Impressao/Abertos/Capa")
+                elif 'fechado' in name.lower() or 'closed' in name.lower():
+                    run_s3_sync(f"s3://{bucket}/{p}", f"{base_local}/Impressao/Fechados/Capa")
+                else:
+                    # não reconhecido: baixar para uma pasta genérica de Apoio/Capa
+                    run_s3_sync(f"s3://{bucket}/{p}", f"{base_local}/Impressao/Apoio/Capa")
+        else:
+            # fallback: baixar todo o conteúdo da raiz
+            run_s3_sync(f"{capa_root}", f"{base_local}/Impressao/Abertos/Capa")
+    elif capa_root:
+        # Lógica Local
+        print(f"   [SYNC LOCAL] Verificando diretório local de capa: {capa_root}")
+        if os.path.isdir(capa_root):
+            subdirs = [os.path.join(capa_root, d) for d in os.listdir(capa_root) if os.path.isdir(os.path.join(capa_root, d))]
+            if subdirs:
+                for d in subdirs:
+                    name = os.path.basename(d)
+                    if 'aberto' in name.lower():
+                        run_s3_sync(d, f"{base_local}/Impressao/Abertos/Capa")
+                    elif 'fechado' in name.lower() or 'closed' in name.lower():
+                        run_s3_sync(d, f"{base_local}/Impressao/Fechados/Capa")
+                    else:
+                        run_s3_sync(d, f"{base_local}/Impressao/Apoio/Capa")
             else:
-                # não reconhecido: baixar para uma pasta genérica de Apoio/Capa
-                run_s3_sync(f"s3://{bucket}/{p}", f"{base_local}/Impressao/Apoio/Capa")
-    else:
-        # fallback: baixar todo o conteúdo da raiz
-        run_s3_sync(f"{capa_root}", f"{base_local}/Impressao/Abertos/Capa")
+                run_s3_sync(capa_root, f"{base_local}/Impressao/Abertos/Capa")
+        else:
+            print(f"      [AVISO] Diretório local de capa não encontrado ou inválido: {capa_root}")
 
     # Processamento de Miolo
-    miolo_root = job_config['s3_miolo_root'].rstrip('/')
-    run_s3_sync(f"{miolo_root}/Impressao/Abertos/Miolo", f"{base_local}/Impressao/Abertos/Miolo")
-    run_s3_sync(f"{miolo_root}/Impressao/Fechados/Miolo", f"{base_local}/Impressao/Fechados/Miolo")
-    # Originais: tenta ambos os nomes usados nos fornecedores ("Originais" e "Original")
-    _sync_originais(session, miolo_root, f"{base_local}/Impressao/Originais")
+    miolo_root = job_config.get('s3_miolo_root', '').rstrip('/').strip()
+    if miolo_root.startswith('s3://'):
+        run_s3_sync(f"{miolo_root}/Impressao/Abertos/Miolo", f"{base_local}/Impressao/Abertos/Miolo")
+        run_s3_sync(f"{miolo_root}/Impressao/Fechados/Miolo", f"{base_local}/Impressao/Fechados/Miolo")
+        # Originais: tenta ambos os nomes usados nos fornecedores ("Originais" e "Original")
+        _sync_originais(session, miolo_root, f"{base_local}/Impressao/Originais")
+    elif miolo_root:
+        # Lógica Local
+        print(f"   [SYNC LOCAL] Verificando diretório local de miolo: {miolo_root}")
+        if os.path.isdir(miolo_root):
+            run_s3_sync(os.path.join(miolo_root, "Impressao", "Abertos", "Miolo"), f"{base_local}/Impressao/Abertos/Miolo")
+            run_s3_sync(os.path.join(miolo_root, "Impressao", "Fechados", "Miolo"), f"{base_local}/Impressao/Fechados/Miolo")
+            
+            # Originais para local
+            candidatos = ["Originais", "Original"]
+            encontrado = False
+            for nome in candidatos:
+                caminho = os.path.join(miolo_root, "Impressao", nome)
+                if os.path.isdir(caminho):
+                    run_s3_sync(caminho, f"{base_local}/Impressao/Originais")
+                    encontrado = True
+                    break
+            if not encontrado:
+                print("   [SYNC LOCAL] Nenhuma pasta de Originais/Original encontrada localmente.")
+        else:
+            print(f"      [AVISO] Diretório local de miolo não encontrado ou inválido: {miolo_root}")
 
 
 def upload_final(base_local, s3_destino):
