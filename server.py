@@ -134,13 +134,79 @@ def _broadcast(msg_dict):
                 pass  # drop if client is too slow
 
 
+def _parse_progress_line(line):
+    """Parse [PROGRESS] or [PHASE_COMPLETE] or [ERROR_*] lines from main.py output."""
+    import json
+    
+    if line.startswith('[PROGRESS]'):
+        try:
+            parts = line[11:].strip().split()
+            data = {"type": "progress"}
+            for p in parts:
+                if '=' in p:
+                    k, v = p.split('=', 1)
+                    if k == "phase":
+                        data["phase"] = int(v)
+                    elif k == "current":
+                        data["current"] = int(v)
+                    elif k == "total":
+                        data["total"] = int(v)
+                    elif k == "speed":
+                        data["speed_display"] = v
+            if "phase" in data:
+                from modules.progress_tracker import ProgressTracker
+                data["phase_name"] = ProgressTracker.PHASES[data["phase"]]
+            return data
+        except Exception:
+            return None
+    
+    if line.startswith('[ERROR_CARD]'):
+        try:
+            phase = int(line.split('phase=')[1].split()[0])
+            return {"type": "error_card_start", "phase": phase}
+        except Exception:
+            return None
+    
+    if line.startswith('[ERROR_ITEM]'):
+        return {"type": "error_item", "text": line[12:].strip()}
+    
+    if line == '[ERROR_CARD_END]':
+        return {"type": "error_card_end"}
+    
+    if line.startswith('[MISSING_FILES_CARD]'):
+        try:
+            count = int(line.split('count=')[1])
+            return {"type": "missing_card_start", "count": count}
+        except Exception:
+            return None
+    
+    if line.startswith('[MISSING_FILE_ITEM]'):
+        return {"type": "missing_item", "text": line.split(']', 1)[1].strip()}
+    
+    if line == '[MISSING_FILES_CARD_END]':
+        return {"type": "missing_card_end"}
+    
+    if line.startswith('[PHASE_COMPLETE]'):
+        try:
+            phase = int(line.split('phase=')[1])
+            return {"type": "phase_complete", "phase": phase}
+        except Exception:
+            return None
+    
+    return None
+
+
 def _reader_thread(pipe, name):
     """Read lines from subprocess pipe and broadcast."""
     try:
         for raw_line in iter(pipe.readline, ''):
             line = raw_line.rstrip('\r\n')
             if line:
-                _broadcast({'type': 'log', 'text': line})
+                parsed = _parse_progress_line(line)
+                if parsed:
+                    _broadcast(parsed)
+                else:
+                    _broadcast({'type': 'log', 'text': line})
     except Exception:
         pass
     finally:

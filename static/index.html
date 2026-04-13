@@ -542,6 +542,200 @@
   }
 
   /* ═══════════════════════════════════════════════════
+     PROGRESS BAR in terminal header
+     ═══════════════════════════════════════════════════ */
+  .progress-container {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-left: 12px;
+    flex: 1;
+  }
+
+  .progress-container.visible {
+    display: flex;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    max-width: 200px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-600), var(--green-400));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .progress-info {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--sage);
+    white-space: nowrap;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     ERROR CARD (outside terminal)
+     ═══════════════════════════════════════════════════ */
+  .error-card {
+    display: none;
+    background: rgba(30, 15, 10, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 136, 107, 0.3);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 20px;
+    animation: cardSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .error-card.visible {
+    display: block;
+  }
+
+  @keyframes cardSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .error-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .error-card-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #d4886b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .error-card-close {
+    background: none;
+    border: none;
+    color: rgba(212, 136, 107, 0.5);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .error-card-close:hover {
+    background: rgba(212, 136, 107, 0.15);
+    color: #d4886b;
+  }
+
+  .error-list {
+    list-style: none;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 136, 107, 0.3) transparent;
+  }
+
+  .error-list li {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(212, 136, 107, 0.85);
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(212, 136, 107, 0.08);
+  }
+
+  .error-list li:last-child {
+    border-bottom: none;
+  }
+
+  .error-phase-tag {
+    color: rgba(212, 136, 107, 0.5);
+    font-size: 0.65rem;
+    margin-right: 6px;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     MISSING FILES CARD
+     ═══════════════════════════════════════════════════ */
+  .missing-card {
+    display: none;
+    background: rgba(20, 15, 30, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(180, 140, 200, 0.3);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 16px;
+    animation: cardSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .missing-card.visible {
+    display: block;
+  }
+
+  .missing-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .missing-card-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #b48cc8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .missing-card-close {
+    background: none;
+    border: none;
+    color: rgba(180, 140, 200, 0.5);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .missing-card-close:hover {
+    background: rgba(180, 140, 200, 0.15);
+    color: #b48cc8;
+  }
+
+  .missing-list {
+    list-style: none;
+    max-height: 180px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180, 140, 200, 0.3) transparent;
+  }
+
+  .missing-list li {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(180, 140, 200, 0.8);
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(180, 140, 200, 0.08);
+  }
+
+  .missing-list li:last-child {
+    border-bottom: none;
+  }
+
+  /* ═══════════════════════════════════════════════════
      INTERACTIVE PROMPT (stdin)
      ═══════════════════════════════════════════════════ */
   .prompt-bar {
@@ -817,6 +1011,12 @@
         <div class="terminal-dot"></div>
         <div class="terminal-dot"></div>
         <span class="terminal-title">terminal — saída do processo</span>
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+          <span class="progress-info" id="progressInfo">0/0</span>
+        </div>
         <div class="terminal-status" id="terminalStatus">
           <span class="status-dot"></span>
           <span>em execução</span>
@@ -835,6 +1035,30 @@
         <button class="prompt-btn yes" onclick="sendInput('s')">Subir Agora</button>
       </div>
     </div>
+  </div>
+
+  <!-- ─── ERROR CARD ─── -->
+  <div class="error-card" id="errorCard">
+    <div class="error-card-header">
+      <div class="error-card-title">
+        <span>⚠️</span>
+        <span id="errorCardTitle">Erros Encontrados</span>
+      </div>
+      <button class="error-card-close" onclick="hideErrorCard()">×</button>
+    </div>
+    <ul class="error-list" id="errorList"></ul>
+  </div>
+
+  <!-- ─── MISSING FILES CARD ─── -->
+  <div class="missing-card" id="missingCard">
+    <div class="missing-card-header">
+      <div class="missing-card-title">
+        <span>📁</span>
+        <span id="missingCardTitle">Arquivos Não Encontrados</span>
+      </div>
+      <button class="missing-card-close" onclick="hideMissingCard()">×</button>
+    </div>
+    <ul class="missing-list" id="missingList"></ul>
   </div>
 
   <!-- ─── STATUS BAR ─── -->
@@ -979,6 +1203,74 @@ function appendLog(text, cls) {
 function clearLogs() {
   document.getElementById('terminalBody').innerHTML =
     '<div class="log-placeholder">aguardando execução…</div>';
+  hideErrorCard();
+  hideMissingCard();
+  currentErrors = [];
+  currentMissingFiles = [];
+  isPhaseComplete = false;
+}
+
+/* ─── State for cards ─── */
+let currentErrors = [];
+let currentMissingFiles = [];
+let isPhaseComplete = false;
+
+/* ─── Progress bar ─── */
+function updateProgress(data) {
+  const container = document.getElementById('progressContainer');
+  const fill = document.getElementById('progressFill');
+  const info = document.getElementById('progressInfo');
+  
+  if (data.type === 'progress') {
+    container.classList.add('visible');
+    const pct = data.total > 0 ? (data.current / data.total) * 100 : 0;
+    fill.style.width = pct + '%';
+    info.textContent = `${data.current}/${data.total} ${data.speed_display || ''}`;
+  }
+}
+
+/* ─── Error card ─── */
+function showErrorCard() {
+  const card = document.getElementById('errorCard');
+  const list = document.getElementById('errorList');
+  const title = document.getElementById('errorCardTitle');
+  
+  list.innerHTML = '';
+  currentErrors.forEach(err => {
+    const li = document.createElement('li');
+    const phaseTag = err.phase !== undefined ? 
+      `<span class="error-phase-tag">[${err.phase === 0 ? 'Coletando' : 'Enviando'}]</span>` : '';
+    li.innerHTML = phaseTag + err.message;
+    list.appendChild(li);
+  });
+  
+  title.textContent = `Erros Encontrados (${currentErrors.length})`;
+  card.classList.add('visible');
+}
+
+function hideErrorCard() {
+  document.getElementById('errorCard').classList.remove('visible');
+}
+
+/* ─── Missing files card ─── */
+function showMissingCard() {
+  const card = document.getElementById('missingCard');
+  const list = document.getElementById('missingList');
+  const title = document.getElementById('missingCardTitle');
+  
+  list.innerHTML = '';
+  currentMissingFiles.forEach(f => {
+    const li = document.createElement('li');
+    li.textContent = f;
+    list.appendChild(li);
+  });
+  
+  title.textContent = `Arquivos Não Encontrados (${currentMissingFiles.length})`;
+  card.classList.add('visible');
+}
+
+function hideMissingCard() {
+  document.getElementById('missingCard').classList.remove('visible');
 }
 
 /* ─── Detect stdin prompts ─── */
@@ -1058,7 +1350,28 @@ async function toggleRun() {
 
   eventSource.onmessage = (e) => {
     const data = JSON.parse(e.data);
-    if (data.type === 'log') {
+    
+    if (data.type === 'progress') {
+      updateProgress(data);
+      appendLog(`[${data.phase_name}] ${data.current}/${data.total} - ${data.speed_display || '0 B/s'}`, 'info');
+    } else if (data.type === 'error_card_start') {
+      currentErrors = [];
+    } else if (data.type === 'error_item') {
+      currentErrors.push({message: data.text});
+    } else if (data.type === 'error_card_end') {
+      showErrorCard();
+    } else if (data.type === 'missing_card_start') {
+      currentMissingFiles = [];
+    } else if (data.type === 'missing_item') {
+      currentMissingFiles.push(data.text);
+    } else if (data.type === 'missing_card_end') {
+      if (currentMissingFiles.length > 0) {
+        showMissingCard();
+      }
+    } else if (data.type === 'phase_complete') {
+      isPhaseComplete = true;
+      appendLog(`[FASE ${data.phase} COMPLETA]`, 'success');
+    } else if (data.type === 'log') {
       appendLog(data.text);
       checkForPrompt(data.text);
     } else if (data.type === 'done') {

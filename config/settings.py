@@ -1,18 +1,18 @@
 # --- MAPEAMENTO MANUAL DE CAMINHOS ---
 JOB = {
-    "nome_projeto": "9788582606858",
+    "nome_projeto": "9786558823780",
     
     # Raízes AWS
-    "s3_capa_root": "s3://workdocs-publishing/Fornecedores/KAELE/kaele/Capas/05646 - Kloppenborg_Gerenciamento de projetos contemporaneos_5ed/",
-    "s3_miolo_root": "C:\\Users\\jlsilva\\OneDrive - Grupo A Educação SA\\Controle_backup\\Provisorio_Publishing\\Kloppenborg_Gerenciamento de Projetos Contemporâneos _5ed\\Kloppenborg_Gerenciamento de Projetos Contemporâneos",
+    "s3_capa_root": "s3://workdocs-publishing/Fornecedores/KAELE/kaele/Capas/05678 - CARDOSO Manual de terapoia de grupo PRISMAS/",
+    "s3_miolo_root": "s3://workdocs-publishing/Fornecedores/AGE/age/CARDOSO_Manual_Terapia_Grupo_PRISMAS/",
     # Bucket final para upload de saída (defina como s3://seu-bucket/Finalizados/)
     "s3_final_root": "s3://workdocs-publishing/BACKUP_PUBLISHING_atual/",
     
     # Raízes VPN/Local (Agora com Originais e Metabooks explícitos)
     "vpn_apoio_root": r"",
-    "vpn_originais": r"L:\K\KLOPPENBORG_Timothy\Gerenciamento_de_projetos_5ed\Original",
-    "vpn_web_epub":  r"L:\K\KLOPPENBORG_Timothy\Gerenciamento_de_projetos_5ed\Temporario\ePub\Plataformas\binpar",
-    "vpn_metabooks": r"L:\K\KLOPPENBORG_Timothy\Gerenciamento_de_projetos_5ed\Temporario\Metabooks"
+    "vpn_originais": r"L:\C\CARDOSO_Bruno\Manual_terapia_de_grupo_PRISMAS\Original",
+    "vpn_web_epub":  r"L:\C\CARDOSO_Bruno\Manual_terapia_de_grupo_PRISMAS\Temporario\epub\Plataformas\binpar",
+    "vpn_metabooks": r"L:\C\CARDOSO_Bruno\Manual_terapia_de_grupo_PRISMAS\Temporario\Metabooks"
 }
 
 # Flags de ativação de módulos
